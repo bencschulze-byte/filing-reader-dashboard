@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Filing Reader</title>
+  <meta name="description" content="Operational dashboard for Filing Reader: the companies tracked, SEC filings read, price indices and pipeline health.">
+  <link rel="stylesheet" href="assets/app.css?v=543d12166cfa">
+</head>
+<body>
+<main class="fr">
+  <header class="fr-head">
+    <h1>Filing Reader</h1>
+    <p>Tracking <b data-k="companies">—</b> US small and mid caps from their SEC filings, with <b data-k="parsed">—</b> filings read so far. This page shows the company list, filing activity and pipeline health only; predictions and portfolio results are not published here.</p>
+    <p class="fr-asof" id="asof">Data as of <span data-k="data_as_of">—</span> · generated <span data-k="generated_at">—</span></p>
+  </header>
+
+  <noscript><p class="fr-notice">This page draws its charts and tables with JavaScript. Turn JavaScript on to see them, or read the raw numbers in <a href="data/summary.json">data/</a> (JSON).</p></noscript>
+  <p class="fr-notice" id="load-error" hidden></p>
+
+  <div class="fr-tiles">
+    <div class="fr-tile">
+      <span class="lbl">Companies tracked</span>
+      <span class="num" data-k="companies">—</span>
+      <span class="sub" id="tile-companies-sub">Split into three size groups by market cap</span>
+    </div>
+    <div class="fr-tile">
+      <span class="lbl">Filings parsed</span>
+      <span class="num" data-k="parsed">—</span>
+      <span class="sub" id="tile-parsed-sub">Annual, quarterly and earnings releases</span>
+    </div>
+    <div class="fr-tile">
+      <span class="lbl">Parse failures</span>
+      <span class="num" data-k="failed" id="tile-failed">—</span>
+      <span class="sub">Filings whose latest parse attempt failed</span>
+    </div>
+    <div class="fr-tile">
+      <span class="lbl">Company list, equal-weighted</span>
+      <span class="num" data-k="index_change">—</span>
+      <span class="sub">Since <span data-k="index_since">—</span>, price only</span>
+    </div>
+  </div>
+
+  <section class="fr-section" aria-labelledby="h-market">
+    <h2 id="h-market">Market and filings</h2>
+    <div class="fr-grid">
+      <div class="fr-card">
+        <h3>The companies by size group</h3>
+        <p class="note">Equal-weighted index of each group's price changes, rebased to 100.</p>
+        <p class="note" id="iwm-note"></p>
+        <div class="fr-legend" id="index-legend"></div>
+        <div class="fr-chart" id="index-chart"></div>
+      </div>
+      <div class="fr-card">
+        <h3>Filings read per week</h3>
+        <p class="note">By the week SEC accepted them. Earnings seasons show as the peaks.</p>
+        <div class="fr-legend" id="filings-legend"></div>
+        <div class="fr-chart" id="filings-chart"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="fr-section" aria-labelledby="h-list">
+    <h2 id="h-list">How the company list was built</h2>
+    <div class="fr-grid">
+      <div class="fr-card">
+        <h3>Candidates by screening outcome</h3>
+        <p class="note">Every NYSE and Nasdaq company SEC lists, by the first rule that removed it. "Eligible, not sampled" passed every rule but wasn't drawn into the list.</p>
+        <div class="fr-chart" id="screening-chart"></div>
+      </div>
+      <div class="fr-card">
+        <h3>Pipeline health</h3>
+        <p class="note">The latest run of each scheduled job.</p>
+        <div class="fr-table-wrap">
+          <table>
+            <thead><tr><th scope="col">Job</th><th scope="col">Last run (UTC)</th><th scope="col">Status</th><th scope="col" class="opt">Last success</th></tr></thead>
+            <tbody id="jobs-body"></tbody>
+          </table>
+        </div>
+        <h3>Filings by parse status</h3>
+        <p class="note">8-Ks other than earnings releases are recorded but not downloaded (skipped).</p>
+        <div class="fr-table-wrap">
+          <table>
+            <thead><tr><th scope="col">Form</th><th scope="col" class="n">Parsed</th><th scope="col" class="n">Failed</th><th scope="col" class="n">Skipped</th></tr></thead>
+            <tbody id="status-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="fr-section" aria-labelledby="h-companies">
+    <h2 id="h-companies">The companies</h2>
+    <div class="fr-card">
+      <h3>All <span data-k="companies">—</span> companies</h3>
+      <p class="note">Market cap and average daily dollar volume as of the company-list build on <span data-k="snapshot_date">—</span>. Filing counts are parsed filings since <span data-k="filings_since">—</span>.</p>
+      <div class="fr-search-row">
+        <input class="fr-search" id="company-search" type="search" placeholder="Search ticker, name or sector" aria-label="Search companies">
+        <span class="note" id="company-count" aria-live="polite"></span>
+      </div>
+      <div class="fr-table-wrap tall">
+        <table id="companies">
+          <thead><tr>
+            <th scope="col" aria-sort="none"><button type="button" data-sort="ticker">Ticker</button></th>
+            <th scope="col" aria-sort="none"><button type="button" data-sort="name">Company</button></th>
+            <th scope="col" aria-sort="none"><button type="button" data-sort="size_group">Size</button></th>
+            <th scope="col" aria-sort="none"><button type="button" data-sort="sector">Sector</button></th>
+            <th scope="col" class="n" aria-sort="descending"><button type="button" data-sort="market_cap">Market cap</button></th>
+            <th scope="col" class="n" aria-sort="none"><button type="button" data-sort="avg_daily_dollar_volume">Daily volume</button></th>
+            <th scope="col" class="n" aria-sort="none"><button type="button" data-sort="annual_reports">10-K</button></th>
+            <th scope="col" class="n" aria-sort="none"><button type="button" data-sort="quarterly_reports">10-Q</button></th>
+            <th scope="col" class="n" aria-sort="none"><button type="button" data-sort="earnings_releases">Earnings</button></th>
+            <th scope="col" aria-sort="none"><button type="button" data-sort="last_filing">Last filing</button></th>
+          </tr></thead>
+          <tbody id="companies-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="fr-section" aria-labelledby="h-next">
+    <h2 id="h-next">Coming next</h2>
+    <div class="fr-soon">
+      <div class="fr-card"><h3>Predictions</h3><p>The three baseline predictions (filing changes, earnings momentum, earnings surprise) for each company's next earnings announcement.</p><p class="when">Starts with milestone 4.</p></div>
+      <div class="fr-card"><h3>Research scorecard</h3><p>Whether the AI's reading adds anything beyond the baselines, against pre-registered thresholds, marked "too early to tell" until the sample is large enough.</p><p class="when">First check after 3 live quarters.</p></div>
+      <div class="fr-card"><h3>Portfolio and holdings</h3><p>The 40-company paper portfolio: value against the Russell 2000 and a formula portfolio, and why holdings changed.</p><p class="when">After the AI reading step.</p></div>
+      <div class="fr-card"><h3>Signals and costs</h3><p>Material filings, red flags such as auditor changes, and AI spend against the monthly cap.</p><p class="when">With the AI reading step.</p></div>
+    </div>
+  </section>
+
+  <footer class="fr-foot">
+    <p>Generated daily from the project's committed ledger after the pipeline runs. Not investment advice.</p>
+  </footer>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js" integrity="sha512-vc58qvvBdrDR4etbxMdlTt4GBQk1qjvyORR2nrsPsFPyrs+/u5c3+1Ct6upOgdZoIl7eq6k3a1UPDSNAQi/32A==" crossorigin="anonymous"></script>
+<script src="assets/app.js?v=cb21646a04a3"></script>
+</body>
+</html>
