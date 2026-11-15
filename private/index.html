@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://cdnjs.cloudflare.com; style-src 'self'; connect-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <title>Filing Reader Private</title>
+  <meta name="description" content="Private view of Filing Reader: predictions, upcoming announcements, outcomes and spend. Password required.">
+  <link rel="stylesheet" href="../assets/app.css?v=f5f50482e854">
+</head>
+<body>
+<main class="fr">
+  <header class="fr-head fr-head-row">
+    <div>
+      <h1>Filing Reader · private view</h1>
+      <p>Predictions, upcoming announcements, outcomes and spend. The data on this page is published only in encrypted form and decrypted in your browser.</p>
+      <p class="fr-asof">Data as of <span data-k="data_as_of">—</span> · generated <span data-k="generated_at">—</span> · <a href="../">Public dashboard</a></p>
+    </div>
+    <button type="button" class="fr-btn" id="lock" hidden>Lock</button>
+  </header>
+
+  <noscript><p class="fr-notice">The private view decrypts its data with JavaScript. Turn JavaScript on to use it.</p></noscript>
+  <p class="fr-notice" id="load-error" hidden></p>
+
+  <form class="fr-card fr-unlock" id="unlock" hidden autocomplete="off">
+    <h2>Unlock</h2>
+    <input type="text" name="username" autocomplete="username" value="filing-reader private view" hidden>
+    <label for="password">Password</label>
+    <div class="fr-search-row">
+      <input class="fr-search" id="password" type="password" autocomplete="current-password" required>
+      <button type="submit" class="fr-btn" id="unlock-btn">Unlock</button>
+    </div>
+    <p class="note" id="unlock-msg" role="status" aria-live="polite"></p>
+  </form>
+
+  <div id="content" hidden>
+    <div class="fr-tiles">
+      <div class="fr-tile"><span class="lbl">Predictions logged</span><span class="num" data-k="n_predictions">—</span><span class="sub" id="tile-pred-sub"></span></div>
+      <div class="fr-tile"><span class="lbl">Companies predicted</span><span class="num" data-k="n_companies">—</span><span class="sub">With at least one prediction</span></div>
+      <div class="fr-tile"><span class="lbl">Outcomes scored</span><span class="num" data-k="n_outcomes">—</span><span class="sub">Announcement reactions on file</span></div>
+      <div class="fr-tile"><span class="lbl">Releases expected, next 14 days</span><span class="num" data-k="n_soon">—</span><span class="sub">For companies with a prediction</span></div>
+    </div>
+    <p class="fr-notice" id="issues" hidden></p>
+
+    <section class="fr-section" aria-labelledby="h-pred">
+      <h2 id="h-pred">Predictions</h2>
+      <div class="fr-grid">
+        <div class="fr-card">
+          <h3>By arm and direction</h3>
+          <p class="note">Counts follow the filters below.</p>
+          <div class="fr-legend" id="dir-legend"></div>
+          <div class="fr-chart short" id="dir-chart"></div>
+        </div>
+        <div class="fr-card">
+          <h3>Counts</h3>
+          <div class="fr-table-wrap">
+            <table>
+              <thead><tr><th scope="col">Arm</th><th scope="col" class="n">Up</th><th scope="col" class="n">Flat</th><th scope="col" class="n">Down</th><th scope="col" class="n">Total</th></tr></thead>
+              <tbody id="counts-body"></tbody>
+            </table>
+          </div>
+          <h3>Skipped decision points</h3>
+          <p class="note">A filing where an arm logged nothing, and why.</p>
+          <div class="fr-table-wrap">
+            <table>
+              <thead><tr><th scope="col">Arm</th><th scope="col">Reason</th><th scope="col" class="n">Count</th></tr></thead>
+              <tbody id="skips-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="fr-card fr-mt">
+        <h3>All predictions</h3>
+        <div class="fr-search-row">
+          <input class="fr-search" id="pred-search" type="search" placeholder="Search ticker, period or rationale" aria-label="Search predictions">
+          <select class="fr-select" id="pred-arm" aria-label="Arm"><option value="">All arms</option></select>
+          <select class="fr-select" id="pred-dir" aria-label="Direction"><option value="">All directions</option><option value="up">Up</option><option value="flat">Flat</option><option value="down">Down</option></select>
+          <span class="note" id="pred-count" aria-live="polite"></span>
+        </div>
+        <div class="fr-table-wrap tall">
+          <table id="predictions">
+            <thead><tr>
+              <th scope="col" aria-sort="none"><button type="button" data-sort="ticker">Ticker</button></th>
+              <th scope="col" aria-sort="none"><button type="button" data-sort="arm">Arm</button></th>
+              <th scope="col" aria-sort="none"><button type="button" data-sort="direction">Direction</button></th>
+              <th scope="col" class="n" aria-sort="none"><button type="button" data-sort="probability">Probability</button></th>
+              <th scope="col" class="n" aria-sort="none"><button type="button" data-sort="score">Score</button></th>
+              <th scope="col" aria-sort="none"><button type="button" data-sort="target_period">Target</button></th>
+              <th scope="col" aria-sort="descending"><button type="button" data-sort="created_at">Created (UTC)</button></th>
+              <th scope="col" aria-sort="none"><button type="button" data-sort="filing_accepted_at">Source filing</button></th>
+              <th scope="col" class="opt">Rationale</th>
+            </tr></thead>
+            <tbody id="pred-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="fr-section" aria-labelledby="h-up">
+      <h2 id="h-up">Upcoming announcements</h2>
+      <div class="fr-card">
+        <p class="note">The earnings release each predicted company's latest prediction targets. Expected dates are estimates: last year's release for the same quarter plus 52 weeks when on file, otherwise a typical lag after the quarter end. "On file" means an earnings 8-K that looks like the target is in the ledger; outcomes decide what is scored.</p>
+        <div class="fr-search-row">
+          <label class="note"><input type="checkbox" id="up-hide-done" checked> Hide releases already on file</label>
+          <span class="note" id="up-count" aria-live="polite"></span>
+        </div>
+        <div class="fr-table-wrap tall">
+          <table>
+            <thead><tr><th scope="col">Ticker</th><th scope="col">Company</th><th scope="col">Target</th><th scope="col" class="opt">Quarter end (est.)</th><th scope="col">Expected</th><th scope="col" class="n">In</th><th scope="col" class="opt">Basis</th><th scope="col">Status</th></tr></thead>
+            <tbody id="up-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="fr-section" aria-labelledby="h-out">
+      <h2 id="h-out">Outcomes and scoreboard</h2>
+      <div class="fr-grid">
+        <div class="fr-card">
+          <h3>Scoreboard by arm</h3>
+          <p class="note">Announcement window, factor-adjusted reaction. Descriptive only: the pre-registered tests and their minimum samples are in the analysis plan.</p>
+          <div class="fr-table-wrap" id="score-wrap">
+            <table>
+              <thead><tr><th scope="col">Arm</th><th scope="col" class="n">Scored</th><th scope="col" class="n">Hit rate</th><th scope="col" class="n">After up</th><th scope="col" class="n">After down</th><th scope="col" class="n">Rank IC</th></tr></thead>
+              <tbody id="score-body"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="fr-card">
+          <h3>Latest outcomes</h3>
+          <div class="fr-table-wrap tall" id="out-wrap">
+            <table>
+              <thead><tr><th scope="col">Ticker</th><th scope="col">Arm</th><th scope="col">Call</th><th scope="col">Horizon</th><th scope="col" class="n">Factor-adj.</th><th scope="col" class="opt">Known</th></tr></thead>
+              <tbody id="out-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="fr-section" aria-labelledby="h-spend">
+      <h2 id="h-spend">AI spend</h2>
+      <div class="fr-card">
+        <p class="note" id="spend-note"></p>
+        <div class="fr-chart short" id="spend-chart"></div>
+      </div>
+    </section>
+
+    <section class="fr-section" aria-labelledby="h-later">
+      <h2 id="h-later">Coming later</h2>
+      <div class="fr-soon">
+        <div class="fr-card"><h3>AI rankings</h3><p>Scores from the AI reading of each filing, ranked across the companies, with rationales.</p><p class="when">With milestone 5.</p></div>
+        <div class="fr-card"><h3>Holdings</h3><p>The paper portfolio's holdings, weights and why they changed.</p><p class="when">With milestones 8 and 9.</p></div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="fr-foot">
+    <p>Private. Generated from the project's committed ledger. Not investment advice.</p>
+  </footer>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js" integrity="sha512-vc58qvvBdrDR4etbxMdlTt4GBQk1qjvyORR2nrsPsFPyrs+/u5c3+1Ct6upOgdZoIl7eq6k3a1UPDSNAQi/32A==" crossorigin="anonymous"></script>
+<script src="../assets/private.js?v=b5c484c2bee1"></script>
+</body>
+</html>
